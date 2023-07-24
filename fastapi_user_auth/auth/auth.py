@@ -36,7 +36,7 @@ from starlette.websockets import WebSocket
 from .backends.base import BaseTokenStore
 from .backends.db import DbTokenStore
 from .models import BaseUser, Role, User, UserRoleLink
-from .schemas import UserLoginOut
+from .schemas import UserLoginOut, schema_create_by_schema
 
 UserModelT = TypeVar("UserModelT", bound=BaseUser)
 

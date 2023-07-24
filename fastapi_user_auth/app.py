@@ -13,6 +13,7 @@ from fastapi_user_auth.admin import UserInfoFormAdmin as DefaultUserInfoFormAdmi
 from fastapi_user_auth.admin import UserLoginFormAdmin as DefaultUserLoginFormAdmin
 from fastapi_user_auth.admin import UserRegFormAdmin as DefaultUserRegFormAdmin
 from fastapi_user_auth.auth import AuthRouter
+from fastapi_user_auth.auth.schemas import schema_create_by_schema
 
 
 class UserAuthApp(AdminApp, AuthRouter):
@@ -32,14 +33,21 @@ class UserAuthApp(AdminApp, AuthRouter):
         self.auth = self.auth or self.site.auth
         AuthRouter.__init__(self)
         self.UserAdmin.model = self.UserAdmin.model or self.auth.user_model
-        self.UserLoginFormAdmin.schema = self.UserLoginFormAdmin.schema
-
+        self.UserLoginFormAdmin.schema = self.UserLoginFormAdmin.schema or schema_create_by_schema(
+            self.auth.user_model, "UserLoginIn", include={"username", "password"}
+        )
         self.UserLoginFormAdmin.schema_submit_out = self.UserLoginFormAdmin.schema_submit_out or self.schema_user_login_out
-        self.UserRegFormAdmin.schema = self.UserRegFormAdmin.schema
-
+        self.UserRegFormAdmin.schema = self.UserRegFormAdmin.schema or schema_create_by_schema(
+            self.auth.user_model, "UserRegIn", include={"username", "password", "email"}
+        )
         self.UserRegFormAdmin.schema_submit_out = self.UserRegFormAdmin.schema_submit_out or self.schema_user_login_out
         self.UserInfoFormAdmin.user_model = self.auth.user_model
-        self.UserInfoFormAdmin.schema = self.UserInfoFormAdmin.schema
+        self.UserInfoFormAdmin.schema = self.UserInfoFormAdmin.schema or schema_create_by_schema(
+            self.auth.user_model,
+            "UserInfoForm",
+            include={"nickname", "password", "avatar", "email"},
+            set_none=True,
+        )
         self.UserInfoFormAdmin.schema_submit_out = self.UserInfoFormAdmin.schema_submit_out or self.schema_user_info
         # register admin
         self.register_admin(
