@@ -2,6 +2,7 @@ import asyncio
 import contextlib
 import functools
 import inspect
+import typing
 from collections.abc import Coroutine
 from typing import (
     Any,
@@ -194,7 +195,13 @@ class Auth(Generic[UserModelT]):
 
         return decorator
 
-    def _create_role_user_sync(self, session: Session, role_key: str = "admin") -> User:
+    def _create_role_user_sync(
+            self,
+            session: Session,
+            role_key: str = "admin",
+            password: typing.Optional[str] = None,
+            email: typing.Optional[str] = None
+    ) -> User:
         # create admin role
         role = session.scalar(select(Role).where(Role.key == role_key))
         if not role:
@@ -211,16 +218,22 @@ class Auth(Generic[UserModelT]):
         if not user:
             user = self.user_model(
                 username=role_key,
-                password=self.pwd_context.hash(role_key),
-                email=f"{role_key}@amis.work",  # type:ignore
+                password=self.pwd_context.hash(password if password else role_key),
+                email=email,
                 roles=[role],
             )
             session.add(user)
             session.flush()
         return user
 
-    async def create_role_user(self, role_key: str = "admin", commit: bool = True) -> User:
-        user = await self.db.async_run_sync(self._create_role_user_sync, role_key)
+    async def create_role_user(
+            self,
+            role_key: str = "admin",
+            password: typing.Optional[str] = None,
+            commit: bool = True,
+            email: typing.Optional[str] = None
+    ) -> User:
+        user = await self.db.async_run_sync(self._create_role_user_sync, role_key, password, email)
         if commit:
             await self.db.async_commit()
         return user
